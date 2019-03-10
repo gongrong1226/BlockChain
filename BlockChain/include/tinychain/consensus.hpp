@@ -1,0 +1,33 @@
+#pragma once
+#include <tinychain/tinychain.hpp>
+#include <tinychain/blockchain.hpp>
+
+namespace tinychain
+{
+class miner
+{
+public:
+	miner(blockchain& chain) :chain_(chain) {};
+	miner(const miner&) = default;
+	miner(miner&&) = default;
+	miner& operator=(miner&&) = default;
+	miner& operator=(const miner&) = default;
+
+	void print() { std::cout << "class miner" << std::endl; }
+
+	//¿ªÊ¼ÍÚ¿ó
+	void start(address_t& addr);
+	inline bool pow_once(block& new_block, address_t& addr);
+
+	// ÌîĞ´×Ô¼º½±Àø¡ª¡ªcoinbase
+	tx create_coinbase_tx(address_t& addr);
+
+private:
+	blockchain& chain_;
+};
+
+bool validate_tx(const tx& new_tx);
+
+bool validate_block(const tx& new_block);
+
+}
