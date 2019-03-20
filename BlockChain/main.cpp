@@ -20,7 +20,8 @@ int main(int argc, char* argv[])
 	std::string buff;
 	uart.info();
 	uart.start_read();
-	while (true) {
+
+	while (true) { 
 		std::cin >> wrt_string;
 		uart.write_data(wrt_string);
 		//usleep(500000);

@@ -26,7 +26,7 @@ serial::~serial() {
 }
 
 int serial::init_serial(void) {
-
+	 
 	if (tcgetattr(fd, &options) < 0)	//获取串口终端属性
 	{
 		log::error("serial") << "tcgetattr error\n";
@@ -143,7 +143,7 @@ void serial::start_read(void) {
 }
 
 void* serial::read_thread(void *_fd) {
-	char buff[1024];
+	unsigned char buff[1024];
 	int fd = *(int*)_fd;
 	int nRead = 0;
 	fd_set rd;
@@ -159,8 +159,23 @@ void* serial::read_thread(void *_fd) {
 		if (buff[nRead] == '\n') {
 			//接收完一帧数据过后的操作
 			//上链等操作在这里完成
+			short int x,  y;
+			int i;
+			printf("Recv:");
+			for (i = 0; i < nRead; i++) {
+				printf("%02x ", buff[i]);
+			}
+			printf("\n");
+			//memcpy(&x, buff + 5, 2);
+			//memcpy(&y, buff + 7, 2);
+			//x = (short int)(buff[5]) << 8 + (short int)buff[6];
+			//y = (short int)(buff[7]) << 8 + (short int)buff[8];
+			x = (buff[5] << 8) | buff[6];
+			y = (buff[7] << 8) | buff[8];
+			printf("x=%hd, y=%hd, sizeof(*x)=%d \n", x, y, sizeof(short int));
+			printf("x=%4x, y=%4x \n\n", x, y);
 			if (nRead < 1023)	buff[nRead + 1] = 0;
-			log::info(__FUNCTION__) << "recv msg: " << buff;
+			//log::info(__FUNCTION__) << "recv msg: " << buff;
 			nRead = 0;
 		}
 		else {
