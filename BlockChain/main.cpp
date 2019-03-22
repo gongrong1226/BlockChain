@@ -3,57 +3,19 @@
  * Comments:
  *
 **/
-//#include <tinychain/tinychain.hpp>
-//#include <tinychain/node.hpp>
-//#include <metaverse/mgbubble/mgbubble.hpp> 
+#include <tinychain/tinychain.hpp>
+#include <tinychain/node.hpp>
+#include <metaverse/mgbubble/mgbubble.hpp> 
 #include <serial.h>
-#include <tinytangle/keypair.h>
-#include <tinytangle/transaction.h>
-#include <tinytangle/unit.h>
 
 using namespace tinychain;
-using namespace tangle;
 using namespace embeded_data;
 // global logger
 
 int main(int argc, char* argv[])
 {
-	KeyPair keyPair;
-	//std::cout << keyPair.address() << std::endl;
-	keyPair.encode_pair();
-	pubkey_t pk = keyPair.address();
-	Transaction tx(pk, 0xff, pk);
-	Json::StreamWriterBuilder builder;
-	std::ostringstream oss;
-	std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
-	writer->write(tx.to_json(), &oss);
-	Json::Value va = tx.to_json();
-	std::cout << oss.str() << std::endl;
-	std::cout << va.toStyledString() << std::endl;
-
-	Unit unit;
-	unit.setup(tx);
-	unit.header_.difficulty = 0;
-	unit.header_.nonce = 0x4fa2;
-	unit.header_.selfWeight = 1;
-	unit.header_.timestamp = get_now_timestamp();
-	unit.header_.tipsHash[0] = "tip1";
-	unit.header_.tipsHash[1] = "tip2";
-	Json::Value unitJson = unit.to_json();
-	auto&& hash = getHash256(unitJson);
-	unit.header_.hash = hash;
-	unit.signature(keyPair.getPrvKey());
-
-	Json::Value transUnit = unit.to_json();
-	Unit p2punit(transUnit);
-	
-
-
-	return 0;
-
-
 	// 初始化本地数据库
-	/*serial uart("/dev/ttyUSB0", 115200);
+	serial uart("/dev/ttyUSB0", 115200);
 	std::string wrt_string = "this is the test\n";
 	std::string buff;
 	uart.info();
@@ -66,9 +28,9 @@ int main(int argc, char* argv[])
 		//uart.write_data("this is the test\n", sizeof("this is the test\n"));
 		//if(wrt_string == "abc")
 
-	}*/
+	}
 
-	/*Logger logger;
+	Logger logger;
 	database d;
 	d.init();
 	d.print();
@@ -82,7 +44,7 @@ int main(int argc, char* argv[])
 
 	// 启动本地服务
 	log::info("main") << "httpserver started";
-	Server.run();*/
+	Server.run();
 
 	/*
 	key_pair my_key = my_node.get_chain().get_new_key_pair();
