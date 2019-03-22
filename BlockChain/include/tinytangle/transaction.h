@@ -10,7 +10,6 @@
 
 namespace tangle {
 	
-
 int64_t get_now_timestamp();
 
 typedef std::string payer_address;

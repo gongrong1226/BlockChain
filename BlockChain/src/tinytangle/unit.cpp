@@ -11,19 +11,27 @@ Unit::Unit(const Unit& unit_) {
 }
 
 Unit::Unit(const Json::Value& json) {
+	if (json["header"]["nonce"].type() != Json::nullValue
+			&&json["header"]["selfWeight"].type() != Json::nullValue
+			&&json["header"]["timestamp"].type() != Json::nullValue
+			&&json["header"]["difficulty"].type() != Json::nullValue
+			&&json["header"]["signature"].type() != Json::nullValue
+			&&json["header"]["hash"].type() != Json::nullValue
+			&&json["header"]["tipsHash"][0].type() != Json::nullValue
+			&&json["header"]["tipsHash"][1].type() != Json::nullValue)
+	{
+		header_.nonce = json["header"]["nonce"].asUInt();
+		header_.selfWeight = json["header"]["selfWeight"].asUInt();
+		header_.timestamp = json["header"]["timestamp"].asUInt();
+		header_.difficulty = json["header"]["difficulty"].asUInt();
+		header_ .signature= json["header"]["signature"].asString();
+		header_.hash = json["header"]["hash"].asString();
+		header_.tipsHash[0] = json["header"]["tipsHash"][0].asString();
+		header_.tipsHash[1] = json["header"]["tipsHash"][1].asString();
 
-	header_.nonce = json["header"]["nonce"].asUInt();
-	header_.selfWeight = json["header"]["selfWeight"].asUInt();
-	header_.timestamp = json["header"]["timestamp"].asUInt();
-	header_.difficulty = json["header"]["difficulty"].asUInt();
-	const char* prch= json["header"]["signature"].asCString();
-	setSignature(prch, 128);
-	header_.hash = json["header"]["hash"].asString();
-	header_.tipsHash[0] = json["header"]["tipsHash"][0].asString();
-	header_.tipsHash[1] = json["header"]["tipsHash"][1].asString();
-
-	Transaction temp(json["tx"]);
-	tx_ = temp;
+		Transaction temp(json["tx"]);
+		tx_ = temp;
+	}
 }
 
 Unit& Unit::operator=(const Unit& rb) {
@@ -75,32 +83,10 @@ std::string Unit::to_string(const Json::Value json) {
 	return json.toStyledString();
 }
 
-bool verify(public_key_t& publicKey, md5_t& md5, const char* getSignature) {
-	using CryptoPP::SecByteBlock;
-	using CryptoPP::PSS;
-	using CryptoPP::InvertibleRSAFunction;
-	using CryptoPP::RSASS;
-	using CryptoPP::RSA;
-	using CryptoPP::SHA256;
-	RSASS<PSS, SHA256>::Verifier verifier(publicKey);
-	bool result = verifier.VerifyMessage((const byte*)md5.c_str(), md5.size(), (const byte*)getSignature, 300);
-	return result;
-}
-
-bool verify1(public_key_t& publicKey, md5_t& md5, const char* getSignature) {
-	using CryptoPP::SecByteBlock;
-	using CryptoPP::PSS;
-	using CryptoPP::InvertibleRSAFunction;
-	using CryptoPP::RSASS;
-	using CryptoPP::RSA;
-	using CryptoPP::SHA256;
-	RSASS<PSS, SHA256>::Verifier verifier(publicKey);
-	bool result = verifier.VerifyMessage((const byte*)md5.c_str(), md5.size(), (const byte*)getSignature, 128);
-	return result;
-}
-
 void Unit::signature(private_key_t privateKey) {
-	using CryptoPP::SecByteBlock;
+	using CryptoPP::StringSource;
+	using CryptoPP::SignerFilter;
+	using CryptoPP::StringSink;
 	using CryptoPP::PSSR;
 	using CryptoPP::PSS;
 	using CryptoPP::InvertibleRSAFunction;
@@ -110,76 +96,66 @@ void Unit::signature(private_key_t privateKey) {
 	CryptoPP::AutoSeededRandomPool rng;
 	InvertibleRSAFunction parameters;
 	parameters.GenerateRandomWithKeySize(rng, 1024);
-	//siganature
-	RSASS<PSSR, SHA256>::Signer signer(privateKey);
+
+	//get siganature 
+	//www.cryptopp.com/wiki/RSA_Signature_Schemes#RSA_Signature_Scheme_with_Appendix_.28Filters.29
+	RSASS<PSS, SHA256>::Signer signer(privateKey);
 	std::string &&md = to_string();
 	md5_t str = to_md5(md);
-	size_t messageLen = str.size();
-	const char *message = str.c_str();
-	size_t length = signer.MaxSignatureLength();
-	SecByteBlock signature(length);
-	size_t signatureLen;
-	try
-	{
-		signature.CleanNew(length);
-		length = signer.SignMessage(rng, (const byte*)message, messageLen, signature);
-		signature.resize(length);
-	}
-	catch (CryptoPP::Exception&e)
-	{
-		std::cerr << "Error: " << e.what() << std::endl;
-	}
+	std::string signature;
+	StringSource ss1(md, true,
+		new SignerFilter(rng, signer,
+			new CryptoPP::StringSink(signature)
+		) // SignerFilter
+	); // StringSource
 
-	const void* tempp = (const byte*)signature;
-	const char* signByte = static_cast<const char*>(tempp);
-	setSignature(signByte, length);
+	//set siganature
+	header_.signature = signature;
+}
 
-	Json::Value root;
-	root["signature"] = header_.signature;
-	const char *ch = root["signature"].asCString();
-	char getSignature[128];
-	memcpy(getSignature, ch, 128);
+bool Unit::verify() {
+	Json::Value &&root = to_json();
+	return verify(root);
+}
 
-	//verify
-	std::string pubkey_str = this->getTransaction().getPayer();
+bool Unit::verify(Json::Value root){
+	using CryptoPP::StringSource;
+	using CryptoPP::StringSink;
+	using CryptoPP::PSS;
+	using CryptoPP::RSASS;
+	using CryptoPP::SHA256;
+
+	//get sinature and reset the sinature
+	std::string getSignature = root["header"]["signature"].asString();
+	std::string tempstr = "";
+	root["header"]["signature"] = tempstr;
+	std::string jsonStr = root.toStyledString();
+
+	//get public key of the payer
+	std::string pubKeyStr = root["tx"]["tx_item"]["payer"].asString();
+	
 	public_key_t publicKey;
-	KeyPair::AddressToKey(pubkey_str, publicKey);
-
-	RSASS<PSS, SHA256>::Verifier verifier(publicKey);
-	bool result = verifier.VerifyMessage((const byte*)str.c_str(), str.size(), (const byte*)signByte, 128);
-	bool result1 = verifier.VerifyMessage((const byte*)str.c_str(), str.size(), (const byte*)getSignature, 128);
-	bool result2 = verifier.VerifyMessage((const byte*)str.c_str(), str.size(), (const byte*)getSignature, 128);
-	bool s = tangle::verify(publicKey, str, signByte);
-	bool s1 = tangle::verify1(publicKey, str, signByte);
-
-	/*Json::Value unit_json = to_json();
-	str = to_string();
-	std::cout << str << std::endl;
-	messageLen = str.size();
-	Unit unit(unit_json);
-
-	char* sich = unit.geHheader().signature;
-	const byte* sign_byte = (const byte*)sich;
-	int signLen = 128;
-	SecByteBlock getSignature(sign_byte, signLen);
-	memset(unit.header_.signature, 0, 128);
-	std::string unit_str = unit.to_string();
-	const byte* unit_byte = (const byte*)unit_str.c_str();
-	int unitLen = unit_str.size();
-	if (unit_str != str) {
-		std::cerr << unit_str << std::endl;
-	}*/
-}
-
-bool Unit::verify(Unit &unit, public_key_t publicKey){
-}
-
-
-bool Unit::setSignature(const char* signature, int length) {
-	if (length > 128) {
+	if (!KeyPair::AddressToKey(pubKeyStr, publicKey)) {
 		return false;
 	}
-	memcpy(header_.signature, signature, length);
+
+	//verify
+	RSASS<PSS, SHA256>::Verifier verifier(publicKey);
+	std::string recovered;
+	try
+	{
+		StringSource ss2(jsonStr + getSignature, true,
+			new CryptoPP::SignatureVerificationFilter(
+				verifier,
+				new StringSink(recovered),
+				CryptoPP::SignatureVerificationFilter::THROW_EXCEPTION |
+				CryptoPP::SignatureVerificationFilter::PUT_MESSAGE
+			) // SignatureVerificationFilter
+		); // StringSource
+	} catch (CryptoPP::Exception&e){
+		std::cerr << "Error: " << e.what() << std::endl;
+		return false;
+	}
 	return true;
 }
 

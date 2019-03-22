@@ -152,7 +152,7 @@ Json::Value KeyPair::to_json() const {
 bool KeyPair::AddressToKey(std::string pubkey_string, public_key_t& public_key) {
 	ByteQueue decodeQueue;
 	std::istringstream  instring(pubkey_string);
-	log::debug(__FUNCTION__) << instring.str();
+	//log::debug(__FUNCTION__) << instring.str();
 	FileSource defile(instring, true /*pumpAll*/);
 	defile.TransferTo(decodeQueue);
 	decodeQueue.MessageEnd();

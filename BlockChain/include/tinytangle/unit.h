@@ -22,7 +22,7 @@ struct unitHeader {
 	version_t version = "v1.0";
 	sha256_t hash;
 	sha256_t tipsHash[2]; //存在只有一个tip的时候？！
-	char signature[128] = { 0 };
+	std::string signature="";
 	uint32_t timestamp{ 0 };
 	uint32_t nonce{ 0 };
 	uint32_t difficulty{ 0 };
@@ -51,7 +51,7 @@ public:
 	void setup(Transaction& tx);
 
 	void signature(private_key_t privateKey);
-	static bool verify(Unit &unit, public_key_t publicKey);
+	bool verify();
 
 	//待完善
 	void print() { std::cout << "class unit" << std::endl; }
@@ -60,6 +60,7 @@ public:
 private:
 	bool setSignature(const char* signature, int length);
 
+	bool verify(Json::Value root);
 
 public:
 	unitHeader header_;
