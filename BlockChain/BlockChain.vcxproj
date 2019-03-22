@@ -79,22 +79,11 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\blockchain.cpp" />
-    <ClCompile Include="src\commands.cpp" />
-    <ClCompile Include="src\consensus.cpp" />
-    <ClCompile Include="src\database.cpp" />
-    <ClCompile Include="src\lib\metaverse\exception\Error.cpp" />
-    <ClCompile Include="src\lib\metaverse\exception\Exception.cpp" />
-    <ClCompile Include="src\lib\metaverse\exception\Instances.cpp" />
-    <ClCompile Include="src\lib\metaverse\Mongoose.cpp" />
-    <ClCompile Include="src\lib\metaverse\RestServ.cpp" />
-    <ClCompile Include="src\lib\metaverse\utility\Stream.cpp" />
-    <ClCompile Include="src\lib\metaverse\utility\Stream_buf.cpp" />
-    <ClCompile Include="src\lib\sha256.cpp" />
     <ClCompile Include="src\logging.cpp" />
-    <ClCompile Include="src\node.cpp" />
-    <ClCompile Include="src\serial.cpp" />
-    <ClCompile Include="src\tinychain.cpp" />
+    <ClCompile Include="src\tinytangle\keypair.cpp" />
+    <ClCompile Include="src\tinytangle\sha256.cpp" />
+    <ClCompile Include="src\tinytangle\transaction.cpp" />
+    <ClCompile Include="src\tinytangle\unit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\metaverse\mgbubble\compat\define.hpp" />
@@ -118,14 +107,12 @@
     <ClInclude Include="include\sqlite3pp\sqlite3pp.ipp" />
     <ClInclude Include="include\sqlite3pp\sqlite3ppext.h" />
     <ClInclude Include="include\sqlite3pp\sqlite3ppext.ipp" />
-    <ClInclude Include="include\tinychain\blockchain.hpp" />
-    <ClInclude Include="include\tinychain\commands.hpp" />
-    <ClInclude Include="include\tinychain\consensus.hpp" />
-    <ClInclude Include="include\tinychain\database.hpp" />
-    <ClInclude Include="include\tinychain\logging.hpp" />
-    <ClInclude Include="include\tinychain\node.hpp" />
-    <ClInclude Include="include\tinychain\sha256.hpp" />
-    <ClInclude Include="include\tinychain\tinychain.hpp" />
+    <ClInclude Include="include\tinytangle\keypair.h" />
+    <ClInclude Include="include\tinytangle\logging.hpp" />
+    <ClInclude Include="include\tinytangle\sha256.hpp" />
+    <ClInclude Include="include\tinytangle\tinytangle.hpp" />
+    <ClInclude Include="include\tinytangle\transaction.h" />
+    <ClInclude Include="include\tinytangle\unit.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\json_static\json_static.vcxproj">
