@@ -28,9 +28,9 @@
 #include <mutex>
 #include <boost/date_time.hpp>
 #include <boost/format.hpp>
-#include <tinychain/logging.hpp>
+#include <tinytangle/logging.hpp>
 
-namespace tinychain {
+namespace tangle {
 
 
 	log::log(level value, const std::string& domain)

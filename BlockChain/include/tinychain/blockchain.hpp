@@ -24,7 +24,7 @@ public:
 	void print() {
 		log::info("blockchain") << "--------begin--------";
 		chain_database_.print();
-		log::info("blockchain") << "--------end--------";
+		log::info("blockchain") << "---------end---------";
 	}
 
 	void test();
