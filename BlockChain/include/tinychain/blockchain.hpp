@@ -34,7 +34,7 @@ public:
 	}
 
 	//获取当前节点高度
-	uint64_ get_height();
+	uint64_t get_height();
 	//获取当前节点最新块
 	block get_last_block();
 	//查询指定区块
