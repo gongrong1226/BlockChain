@@ -49,9 +49,7 @@ namespace tinychain
 		// 填充新块
 		new_block.header_.height = prev_block.header_.height + 1;
 		new_block.header_.prev_hash = prev_block.header_.hash;
-
 		new_block.header_.timestamp = get_now_timestamp();
-
 		new_block.header_.tx_count = pool.size();
 
 		// 难度调整: 
@@ -100,7 +98,6 @@ namespace tinychain
 				return true;
 			}
 		}
-
 		return false;
 	}
 

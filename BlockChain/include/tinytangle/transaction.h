@@ -12,8 +12,8 @@ namespace tangle {
 	
 int64_t get_now_timestamp();
 
-typedef std::string payer_address;
-typedef std::string payee_address;
+typedef pubkey_t payer_address;
+typedef pubkey_t payee_address;
 typedef int64_t value;
 typedef std::tuple<payer_address, value, payee_address> tx_item_t; //无脚本 负数为收入整数为输出
 
@@ -23,7 +23,7 @@ public:
 
 	Transaction();
 	//Transaction(payee_address& address); //coinbase
-	Transaction(payer_address& payer, uint64_t value, payee_address& payee,std::string message = "");
+	Transaction(const payer_address& payer, value value, const payee_address& payee,std::string message = "");
 	Transaction(const Transaction& transction);
 	Transaction(const Json::Value& json);
 	Transaction(Transaction&&) = default;
@@ -35,7 +35,8 @@ public:
 	std::string getMessage() const;
 	int64_t getTimestamp() const;
 	payer_address getPayer() const;
-	payee_address getPayee() const;
+	payee_address getPayee() const; 
+	value getValue() const;
 
 	Json::Value item_to_json(const tx_item_t& tx);
 	Json::Value to_json();
