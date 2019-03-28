@@ -12,8 +12,8 @@ int64_t get_now_timestamp() {
 Transaction::Transaction(){
 }
 
-Transaction::Transaction(payer_address& payer, uint64_t value, 
-						 payee_address& payee, std::string message) {
+Transaction::Transaction(const payer_address& payer, value value, 
+						 const payee_address& payee, std::string message) {
 	tx_item_ = std::make_tuple(payer, value, payee);
 	message_ = message;
 	timestamp_ = get_now_timestamp();
@@ -38,7 +38,7 @@ Transaction::Transaction(const Json::Value& json) {
 		int64_t timestamp_;
 		payer = json["tx_item"]["payer"].asString();
 		payee = json["tx_item"]["payee"].asString();
-		value = json["tx_item"]["value"].asUInt64();
+		value = json["tx_item"]["value"].asInt64();
 
 		tx_item_ = std::make_tuple(payer, value, payee);
 		message_ = json["message"].asString();
@@ -70,6 +70,9 @@ payer_address Transaction::getPayer(void) const {
 }
 payee_address Transaction::getPayee(void) const {
 	return std::get<2>(tx_item_);
+}
+value Transaction::getValue(void) const {
+	return std::get<1>(tx_item_);
 }
 
 /*Transaction::Transaction(address_t& address) {

@@ -22,6 +22,13 @@ using CryptoPP::FileSink;
 
 namespace tangle {
 	
+class test {
+public: 
+	static std::string globalStr;
+	static void setStr(std::string k) {
+		globalStr = k;
+	}
+};
 // ---------------------------- typedef ----------------------------
 typedef std::string sha256_t;
 typedef std::string md5_t;
@@ -32,6 +39,9 @@ typedef std::string script_pubkey_t;
 typedef std::string data_t;
 typedef CryptoPP::RSA::PublicKey public_key_t;
 typedef CryptoPP::RSA::PrivateKey private_key_t;
+
+
+void addr2String(std::string &addr, std::string &dest);
 
 bool jsonToString(const Json::Value &json, std::string& str);
 //使用sha256得到hash
@@ -74,6 +84,10 @@ public:
 
 	// 格式化为JSON
 	Json::Value to_json() const;
+
+	//做md5摘要再做签名
+	static std::string sinature(const std::string& unitStr, private_key_t privateKey);
+	static bool verifySignature(Json::Value root);
 
 	static bool AddressToKey(std::string pubkey_string, public_key_t& public_key);
 

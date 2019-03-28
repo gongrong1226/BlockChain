@@ -10,15 +10,78 @@
 #include <tinytangle/keypair.h>
 #include <tinytangle/transaction.h>
 #include <tinytangle/unit.h>
+#include <tinytangle/database.h>
+#include <tinytangle/dag.h>
 
 using namespace tinychain;
 using namespace tangle;
 using namespace embeded_data;
 // global logger
 
+//测试通过
+static void testKeyDatabase(void) {
+	database db;
+	db.init();
+	Dag dag(2018);
+	dag.init();
+	KeyPair A;
+	dag.getNewKeyPair(A);
+
+	KeyPair B;
+	dag.getNewKeyPair(B);
+
+	KeyPairDatabase keyDB;
+	Transaction tx(A.address(), 233, B.address());
+	keyDB.updAccount(tx);
+	Transaction tx1(B.address(), 133, A.address());
+	keyDB.updAccount(tx1);
+	return;
+}
+
+//测试通过
+static void testDag(void){
+	//初始化本地数据库
+	database db;
+	db.init();
+
+	//初始化DAG，创建或同步节交易单元（同步是在NETWORK进行）
+	Dag dag(2019);
+	dag.init();
+
+	//获取密钥
+	KeyPair keyA;
+	dag.getNewKeyPair(keyA);
+	KeyPair keyB;
+	dag.getNewKeyPair(keyB);
+
+	//生成Tx
+	payer_address A = keyA.address();
+	payee_address B = keyB.address();
+	Transaction payToB(A, 500, B);
+
+	//根据Tx打包成交易单元
+	Unit unit1;
+	dag.creatUnit(unit1, payToB, keyA.getPrvKey());
+	//交易单元转换json在网络中传输
+	Json::Value root = unit1.to_json();
+
+	/**********网络另一端********/
+	//收到Json报文，直接push到DAG
+	//交由DAG进行验证， 网络只管收发
+	Json::Value recv = root;
+	if (dag.pushUnit(recv)) {
+		//如过验证通过，继续广播该交易
+		//broadcast(recv);
+		//log::info("testDag") << "Broadcast unit";
+		std::cout << "Broadcast unit" << std::endl;
+	}
+}
+std::string test::globalStr = "1";
+
 int main(int argc, char* argv[])
 {
-	KeyPair keyPair;
+
+	/*KeyPair keyPair;
 	//std::cout << keyPair.address() << std::endl;
 	keyPair.encode_pair();
 	pubkey_t pk = keyPair.address();
@@ -45,10 +108,9 @@ int main(int argc, char* argv[])
 	unit.signature(keyPair.getPrvKey());
 
 	Json::Value transUnit = unit.to_json();
-	Unit p2punit(transUnit);
-	
-
-
+	Unit p2punit(transUnit);*/
+	//testKeyDatabase();
+	testDag();
 	return 0;
 
 

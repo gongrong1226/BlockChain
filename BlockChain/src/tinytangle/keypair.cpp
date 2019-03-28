@@ -2,9 +2,25 @@
 
 namespace tangle {
 
+
+//DERencode -> public_key -> md5
+void addr2String(std::string &addr, std::string &dest) {
+	public_key_t public_key;
+	KeyPair::AddressToKey(addr, public_key);
+
+	std::string x509_pubk; //binary pubk as x.509
+	CryptoPP::StringSink ss(x509_pubk);
+	public_key.Save(ss);
+	//int length = x509_pubk.size(); //160 Bytes
+	log::debug(__FUNCTION__) << x509_pubk;
+	// 进行一次MD5作为地址
+	dest = to_md5(x509_pubk);
+}
+
 sha256_t getHash256(Json::Value jv){
 	Json::StreamWriterBuilder builder;
 	std::ostringstream oss;
+	//toStyleString????
 	std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
 	writer->write(jv, &oss);
 	//std::cout << oss.str() << std::endl;
@@ -51,7 +67,7 @@ address_t key_to_address(const public_key_t& public_key) {
 	file.MessageEnd();
 	std::string pubkey_string = osstring.str();
 	//int lengt1h = qs.size(); //138 Bytes
-	log::debug(__FUNCTION__) << pubkey_string;
+	//log::debug(__FUNCTION__) << pubkey_string;
 
 	/*
 	//https://www.cryptopp.com/wiki/BERDecode
@@ -130,8 +146,8 @@ std::pair<std::string, std::string> KeyPair::encode_pair() const {
 	CryptoPP::Base64Encoder pubk_slink(new CryptoPP::StringSink(encoded_pubk), false);
 	private_key_.DEREncode(prik_slink);
 	pubKey.DEREncode(pubk_slink);
-	prik_slink.MessageEnd();//base64 编码补足=
-	pubk_slink.MessageEnd();
+	prik_slink.MessageEnd();//base64 编码补足=  844
+	pubk_slink.MessageEnd();//216
 	//log::debug("key_pair-0")<<encoded_prik;
 	return std::make_pair(encoded_prik, encoded_pubk);
 }
@@ -163,6 +179,79 @@ bool KeyPair::AddressToKey(std::string pubkey_string, public_key_t& public_key) 
 	catch (const std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
+std::string KeyPair::sinature(const std::string& unitStr, private_key_t privateKey) {
+	using CryptoPP::StringSource;
+	using CryptoPP::SignerFilter;
+	using CryptoPP::StringSink;
+	using CryptoPP::PSSR;
+	using CryptoPP::PSS;
+	using CryptoPP::InvertibleRSAFunction;
+	using CryptoPP::RSASS;
+	using CryptoPP::RSA;
+	using CryptoPP::SHA256;
+	CryptoPP::AutoSeededRandomPool rng;
+	InvertibleRSAFunction parameters;
+	parameters.GenerateRandomWithKeySize(rng, 1024);
+
+	//get siganature 
+	//www.cryptopp.com/wiki/RSA_Signature_Schemes#RSA_Signature_Scheme_with_Appendix_.28Filters.29
+	RSASS<PSS, SHA256>::Signer signer(privateKey);
+	//std::string &&md = to_string();
+	//md5_t str = to_md5(str);
+	std::string str = to_md5(unitStr);
+	std::string signature;
+	StringSource ss1(str, true,
+		new SignerFilter(rng, signer,
+			new CryptoPP::StringSink(signature)
+		) // SignerFilter
+	); // StringSource
+
+	return signature;
+}
+
+
+bool KeyPair::verifySignature(Json::Value root) {
+	using CryptoPP::StringSource;
+	using CryptoPP::StringSink;
+	using CryptoPP::PSS;
+	using CryptoPP::RSASS;
+	using CryptoPP::SHA256;
+
+	//get sinature then reset the sinature
+	std::string getSignature = root["header"]["signature"].asString();
+	std::string tempstr = "";
+	root["header"]["signature"] = tempstr;
+	std::string jsonStr = root.toStyledString();
+
+	//get public key of the payer
+	std::string pubKeyStr = root["tx"]["tx_item"]["payer"].asString();
+	public_key_t publicKey;
+	if (!KeyPair::AddressToKey(pubKeyStr, publicKey)) {
+		return false;
+	}
+
+	//verify
+	md5_t md5 = to_md5(jsonStr);
+	RSASS<PSS, SHA256>::Verifier verifier(publicKey);
+	std::string recovered;
+	try
+	{
+		StringSource ss2(md5 + getSignature, true,
+			new CryptoPP::SignatureVerificationFilter(
+				verifier,
+				new StringSink(recovered),
+				CryptoPP::SignatureVerificationFilter::THROW_EXCEPTION |
+				CryptoPP::SignatureVerificationFilter::PUT_MESSAGE
+			) // SignatureVerificationFilter
+		); // StringSource
+	}
+	catch (CryptoPP::Exception&e) {
+		std::cerr << "Error: " << e.what() << std::endl;
 		return false;
 	}
 	return true;
