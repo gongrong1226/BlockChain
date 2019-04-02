@@ -18,7 +18,7 @@ public:
 
 	bool init();
 	void getNewKeyPair(KeyPair& newKey);
-	bool creatUnit(Unit& newUnit, const Transaction tx, const private_key_t privateKey);
+	bool creatUnit(Unit& newUnit, const Transaction& tx, const private_key_t& privateKey);
 
 	//获取最新区块hash和timastamp
 	bool getLastUnit(int64_t& timestamp, sha256_t& hash);

@@ -41,11 +41,11 @@ Unit& Unit::operator=(const Unit& rb) {
 	return *this;
 }
 
-Transaction Unit::getTransaction() const{
+const Transaction& Unit::getTransaction() const{
 	return tx_; 
 }
 
-unitHeader Unit::getHheader() const{
+const unitHeader& Unit::getHheader() const{
 	return header_;
 }
 

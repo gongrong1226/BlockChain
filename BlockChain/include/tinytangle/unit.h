@@ -40,6 +40,11 @@ struct unitHeader {
 		selfWeight = header.selfWeight;
 		return (*this);
 	}
+	unitHeader(const unitHeader* other) {
+		(*this) = (*other);
+	}
+	unitHeader() {
+	}
 };
 class Dag;
 class Unit
@@ -54,8 +59,8 @@ public:
 	Unit& operator=(const Unit& rb);
 	Unit& operator=(Unit&&) = default;
 
-	Transaction getTransaction() const;
-	unitHeader getHheader() const;
+	const Transaction& getTransaction() const;
+	const unitHeader& getHheader() const;
 	sha256_t getHash() const;
 
 	Json::Value to_json();//广播还需加上signature和nonce

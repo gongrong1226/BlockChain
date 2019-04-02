@@ -44,7 +44,7 @@ static uint32_t calcSelfWeight(uint32_t difficulty) {
 	return difficulty / 3000;
 }
 
-bool Dag::creatUnit(Unit& newUnit, const Transaction tx, const private_key_t privateKey) {
+bool Dag::creatUnit(Unit& newUnit, const Transaction& tx, const private_key_t& privateKey) {
 	newUnit.setup(tx);
 	newUnit.header_.difficulty = getDifficulty();
 	newUnit.header_.selfWeight = calcSelfWeight(newUnit.header_.difficulty);

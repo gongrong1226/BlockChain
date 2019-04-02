@@ -1,7 +1,6 @@
 
 #include "MongooseCli.hpp"
 #include <json/json.h>
-
  /**
   * Invoke this program with the raw arguments provided on the command line.
   * All console input and output streams for the application originate here.

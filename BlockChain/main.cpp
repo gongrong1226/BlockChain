@@ -1,24 +1,18 @@
-/**
- * Part of:
- * Comments:
- *
-**/
-//#include <tinychain/tinychain.hpp>
-//#include <tinychain/node.hpp>
-//#include <metaverse/mgbubble/mgbubble.hpp> 
 #include <serial.h>
 #include <tinytangle/keypair.h>
 #include <tinytangle/transaction.h>
 #include <tinytangle/unit.h>
 #include <tinytangle/database.h>
 #include <tinytangle/dag.h>
-
+#include <network/p2pnetwork.h>
+#include <network/threadpool.hpp>
 using namespace tinychain;
 using namespace tangle;
 using namespace embeded_data;
+using namespace network;
 // global logger
 
-//测试通过
+//测试通过/*
 static void testKeyDatabase(void) {
 	database db;
 	db.init();
@@ -44,6 +38,7 @@ static void testDag(void){
 	database db;
 	db.init();
 
+	threadpool::fixed_thread_pool m_thread_pool(2, 2);
 	//初始化DAG，创建或同步节交易单元（同步是在NETWORK进行）
 	Dag dag(2019);
 	dag.init();
@@ -58,59 +53,63 @@ static void testDag(void){
 	payer_address A = keyA.address();
 	payee_address B = keyB.address();
 	Transaction payToB(A, 500, B);
-
-	//根据Tx打包成交易单元
+	Transaction payToA(B, 400, A);
+	auto keyAPrv = keyA.getPrvKey();
 	Unit unit1;
-	dag.creatUnit(unit1, payToB, keyA.getPrvKey());
-	//交易单元转换json在网络中传输
-	Json::Value root = unit1.to_json();
+	//根据Tx打包成交易单元
+	std::function<void()> fun = bind(&Dag::creatUnit, &dag, unit1, payToB, keyAPrv);
+	fun();
+	//std::thread t(fun);
+	//t.detach();
+	//m_thread_pool.execute(fun, "timer1", 2000);
+	m_thread_pool.execute(bind(&Dag::creatUnit, &dag, unit1, payToB, keyAPrv), "timer1", 2000);
+	m_thread_pool.execute([](){std::cout << "timer2" << std::endl; }, "timer2", 3000);
+	/*m_thread_pool.execute(bind([](Dag* dag, Transaction* payToB, private_key_t* keyAPrv) {
+		Unit unit1;
+		dag->creatUnit(unit1, *payToB, *keyAPrv);
+		//交易单元转换json在网络中传输
+		Json::Value root = unit1.to_json();
 
-	/**********网络另一端********/
-	//收到Json报文，直接push到DAG
-	//交由DAG进行验证， 网络只管收发
-	Json::Value recv = root;
-	if (dag.pushUnit(recv)) {
-		//如过验证通过，继续广播该交易
-		//broadcast(recv);
-		//log::info("testDag") << "Broadcast unit";
-		std::cout << "Broadcast unit" << std::endl;
-	}
+		///////////////网络另一端//////////////
+		//收到Json报文，直接push到DAG
+		//交由DAG进行验证， 网络只管收发
+		Json::Value recv = root;
+		if (dag->pushUnit(recv)) {
+			//如过验证通过，继续广播该交易
+			//broadcast(recv);
+			//log::info("testDag") << "Broadcast unit";
+			std::cout << "Broadcast unit" << std::endl;
+		}
+		cout << "test timer1:" << threadpool::fixed_thread_pool::get_current_ms() << endl;
+	}, &dag, &payToB, &keyAPrv), "timer1", 2000);*/
+	/*
+	m_thread_pool.execute(bind([&]() {
+		Unit unit1;
+		dag.creatUnit(unit1, payToA, keyB.getPrvKey());
+		//交易单元转换json在网络中传输
+		Json::Value root = unit1.to_json();
+
+		Json::Value recv = root;
+		if (dag.pushUnit(recv)) {
+			std::cout << "Broadcast unit" << std::endl;
+		}
+		cout << "test timer2:" << threadpool::fixed_thread_pool::get_current_ms() << endl;
+	}), "timer2", 3000);*/
 }
 std::string test::globalStr = "1";
 
 int main(int argc, char* argv[])
 {
+	P2PNetwork network_;
+	network_.init(9002);
+	//testDag();
+	while (true) {
+		string cmd;
+		//cin >> cmd;
+		if (cmd == "quit")
+			break;
+	}
 
-	/*KeyPair keyPair;
-	//std::cout << keyPair.address() << std::endl;
-	keyPair.encode_pair();
-	pubkey_t pk = keyPair.address();
-	Transaction tx(pk, 0xff, pk);
-	Json::StreamWriterBuilder builder;
-	std::ostringstream oss;
-	std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
-	writer->write(tx.to_json(), &oss);
-	Json::Value va = tx.to_json();
-	std::cout << oss.str() << std::endl;
-	std::cout << va.toStyledString() << std::endl;
-
-	Unit unit;
-	unit.setup(tx);
-	unit.header_.difficulty = 0;
-	unit.header_.nonce = 0x4fa2;
-	unit.header_.selfWeight = 1;
-	unit.header_.timestamp = get_now_timestamp();
-	unit.header_.tipsHash[0] = "tip1";
-	unit.header_.tipsHash[1] = "tip2";
-	Json::Value unitJson = unit.to_json();
-	auto&& hash = getHash256(unitJson);
-	unit.header_.hash = hash;
-	unit.signature(keyPair.getPrvKey());
-
-	Json::Value transUnit = unit.to_json();
-	Unit p2punit(transUnit);*/
-	//testKeyDatabase();
-	testDag();
 	return 0;
 
 
